@@ -688,6 +688,7 @@ void SendLoadPersistentPropertiesMessage() {
 
 int SecondStageMain(int argc, char** argv) {
     if (REBOOT_BOOTLOADER_ON_PANIC) {
+        //初始化重启系统的处理信号，内部通过 sigaction 注册信号，当监听到该信号时重启系统
         InstallRebootSignalHandlers();
     }
 
@@ -747,9 +748,11 @@ int SecondStageMain(int argc, char** argv) {
     }
 
     // Mount extra filesystems required during second stage init
+    // 挂载此期间需要的额外的系统文件
     MountExtraFilesystems();
 
     // Now set up SELinux for second stage.
+    // 建立这个阶段的selinux
     SelinuxSetupKernelLogging();
     SelabelInitialize();
     SelinuxRestoreContext();
@@ -777,7 +780,9 @@ int SecondStageMain(int argc, char** argv) {
     MountHandler mount_handler(&epoll);
     SetUsbController();
 
+    // 方法映射
     const BuiltinFunctionMap& function_map = GetBuiltinFunctionMap();
+    // 然后上边的map存放到Action中作为成员属性
     Action::set_function_map(&function_map);
 
     if (!SetupMountNamespaces()) {
@@ -789,7 +794,7 @@ int SecondStageMain(int argc, char** argv) {
     ActionManager& am = ActionManager::GetInstance();
     ServiceList& sm = ServiceList::GetInstance();
 
-    LoadBootScripts(am, sm);
+    LoadBootScripts(am, sm);    // 在这里进行.rc文件的解析
 
     // Turning this on and letting the INFO logging be discarded adds 0.2s to
     // Nexus 9 boot time, so it's disabled by default.
@@ -800,10 +805,11 @@ int SecondStageMain(int argc, char** argv) {
     SetProperty(gsi::kGsiBootedProp, is_running);
     auto is_installed = android::gsi::IsGsiInstalled() ? "1" : "0";
     SetProperty(gsi::kGsiInstalledProp, is_installed);
-
+    //QueueBuiltinAction用于添加Action，第一个参数是Action要执行 的Command,第二个是Trigger
     am.QueueBuiltinAction(SetupCgroupsAction, "SetupCgroups");
     am.QueueBuiltinAction(SetKptrRestrictAction, "SetKptrRestrict");
     am.QueueBuiltinAction(TestPerfEventSelinuxAction, "TestPerfEventSelinux");
+    // QueueEventTrigger用于触发Action,这里 触发 early- init事件
     am.QueueEventTrigger("early-init");
 
     // Queue an action that waits for coldboot done so we know ueventd has set up all of /dev...
@@ -839,7 +845,7 @@ int SecondStageMain(int argc, char** argv) {
 
     // Run all property triggers based on current state of the properties.
     am.QueueBuiltinAction(queue_property_triggers_action, "queue_property_triggers");
-
+    // 进入while（1）循环，监听处理到达的事件
     while (true) {
         // By default, sleep until something happens.
         auto epoll_timeout = std::optional<std::chrono::milliseconds>{};

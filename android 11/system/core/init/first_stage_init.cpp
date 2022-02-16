@@ -324,6 +324,7 @@ int FirstStageMain(int argc, char** argv) {
     dup2(fd, STDOUT_FILENO);
     dup2(fd, STDERR_FILENO);
     close(fd);
+    // 重新执行main方法，进入第二阶段
     execv(path, const_cast<char**>(args));
 
     // execv() only returns if an error happened, in which case we
