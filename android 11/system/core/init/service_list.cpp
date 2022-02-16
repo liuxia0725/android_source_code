@@ -35,7 +35,7 @@ size_t ServiceList::CheckAllCommands() {
     }
     return failures;
 }
-
+// 团价service到Service容器中
 void ServiceList::AddService(std::unique_ptr<Service> service) {
     services_.emplace_back(std::move(service));
 }

@@ -413,6 +413,7 @@ Result<void> Service::Start() {
     // on exit, unless they are ONESHOT. For ONESHOT service, if it's in
     // stopping status, we just set SVC_RESTART flag so it will get restarted
     // in Reap().
+    // 如果service已经运行，则不启动
     if (flags_ & SVC_RUNNING) {
         if ((flags_ & SVC_ONESHOT) && disabled) {
             flags_ |= SVC_RESTART;
@@ -437,7 +438,7 @@ Result<void> Service::Start() {
         }
         close(console_fd);
     }
-
+    // 判断需要启动的service的对应的执行文件是否存在，不存在则不启动
     struct stat sb;
     if (stat(args_[0].c_str(), &sb) == -1) {
         flags_ |= SVC_DISABLED;
@@ -483,7 +484,7 @@ Result<void> Service::Start() {
             LOG(INFO) << "Could not open file '" << file.name << "': " << result.error();
         }
     }
-
+    // 如果子进程没有启动，则调用fork函数创建子进程
     pid_t pid = -1;
     if (namespaces_.flags) {
         pid = clone(nullptr, nullptr, namespaces_.flags | SIGCHLD, nullptr);
@@ -518,7 +519,7 @@ Result<void> Service::Start() {
         // As requested, set our gid, supplemental gids, uid, context, and
         // priority. Aborts on failure.
         SetProcessAttributesAndCaps();
-
+        //调用execv函数，启动sevice子进程
         if (!ExpandArgsAndExecv(args_, sigstop_)) {
             PLOG(ERROR) << "cannot execv('" << args_[0]
                         << "'). See the 'Debugging init' section of init's README.md for tips";

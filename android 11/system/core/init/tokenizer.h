@@ -26,10 +26,10 @@ namespace init {
 
 struct parse_state
 {
-    char *ptr;
-    char *text;
-    int line;
-    int nexttoken;
+    char *ptr;  // 要解析的字符串
+    char *text; // 要解析到的字符串，可以理解为返回一行数据
+    int line;   // 解析到第几行
+    int nexttoken;  // 解析状态，有下边三种：T_EOF 表示字符串解析结束，T_NEWLINE 表示解析完一行的数据，T_TEXT 表示解析到一个单词
 };
 
 int next_token(struct parse_state *state);

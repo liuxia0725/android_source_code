@@ -156,7 +156,13 @@ static void ForEachServiceInClass(const std::string& classname, F function) {
         if (service->classnames().count(classname)) std::invoke(function, service);
     }
 }
+// 启动service
+/* 在解析class_start指令的时候 会映射成如下函数 然后执行如下函数
+on nonencrypted
+    class_start main
+    class_start late_start
 
+*/
 static Result<void> do_class_start(const BuiltinArguments& args) {
     // Do not start a class if it has a property persist.dont_start_class.CLASS set to 1.
     if (android::base::GetBoolProperty("persist.init.dont_start_class." + args[1], false))
