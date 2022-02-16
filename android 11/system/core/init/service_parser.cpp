@@ -544,7 +544,7 @@ const KeywordMap<ServiceParser::OptionParser>& ServiceParser::GetParserMap() con
     // clang-format on
     return parser_map;
 }
-
+// 被用来解析一个新的section 
 Result<void> ServiceParser::ParseSection(std::vector<std::string>&& args,
                                          const std::string& filename, int line) {
     if (args.size() < 3) {
@@ -575,7 +575,7 @@ Result<void> ServiceParser::ParseSection(std::vector<std::string>&& args,
             str_args[0] = "/system/bin/charger";
         }
     }
-
+    //构建出一个service对象
     service_ = std::make_unique<Service>(name, restart_action_subcontext, str_args, from_apex_);
     return {};
 }
@@ -584,11 +584,11 @@ Result<void> ServiceParser::ParseLineSection(std::vector<std::string>&& args, in
     if (!service_) {
         return {};
     }
-
+    // 先去函数映射中查找对应的处理函数
     auto parser = GetParserMap().Find(args);
 
     if (!parser.ok()) return parser.error();
-
+    // std::move并不能移动任何东西，它唯一的功能是将一个左值强制转化为右值引用，继而可以通过右值引用使用该值，以用于移动语义
     return std::invoke(*parser, this, std::move(args));
 }
 
@@ -627,7 +627,7 @@ Result<void> ServiceParser::EndSection() {
         service_list_->RemoveService(*old_service);
         old_service = nullptr;
     }
-
+    // 将service加入到列表中
     service_list_->AddService(std::move(service_));
 
     return {};

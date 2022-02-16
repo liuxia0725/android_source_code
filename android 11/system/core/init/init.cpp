@@ -250,9 +250,10 @@ void DumpState() {
 
 Parser CreateParser(ActionManager& action_manager, ServiceList& service_list) {
     Parser parser;
-
+    
+    // 这里为了以后 根据不同的关键词进行调用不同的解析器进行解析
     parser.AddSectionParser("service", std::make_unique<ServiceParser>(
-                                               &service_list, GetSubcontext(), std::nullopt));
+                                               &service_list, GetSubcontext(), std::nullopt));  ;//service解析
     parser.AddSectionParser("on", std::make_unique<ActionParser>(&action_manager, GetSubcontext()));
     parser.AddSectionParser("import", std::make_unique<ImportParser>(&parser));
 
@@ -270,7 +271,7 @@ Parser CreateServiceOnlyParser(ServiceList& service_list, bool from_apex) {
 }
 
 static void LoadBootScripts(ActionManager& action_manager, ServiceList& service_list) {
-    Parser parser = CreateParser(action_manager, service_list);
+    Parser parser = CreateParser(action_manager, service_list); //创建解析器
 
     std::string bootscript = GetProperty("ro.boot.init_rc", "");
     if (bootscript.empty()) {
@@ -291,7 +292,7 @@ static void LoadBootScripts(ActionManager& action_manager, ServiceList& service_
             late_import_paths.emplace_back("/vendor/etc/init");
         }
     } else {
-        parser.ParseConfig(bootscript);
+        parser.ParseConfig(bootscript); // 开始解析  这里的参数是rc文件的路径
     }
 }
 
@@ -794,7 +795,7 @@ int SecondStageMain(int argc, char** argv) {
     ActionManager& am = ActionManager::GetInstance();
     ServiceList& sm = ServiceList::GetInstance();
 
-    LoadBootScripts(am, sm);    // 在这里进行.rc文件的解析
+    LoadBootScripts(am, sm);    // 在这里进行.rc文件的解析 这里的解析只是将相应的指令放到相应的vector对象之中
 
     // Turning this on and letting the INFO logging be discarded adds 0.2s to
     // Nexus 9 boot time, so it's disabled by default.
@@ -810,9 +811,11 @@ int SecondStageMain(int argc, char** argv) {
     am.QueueBuiltinAction(SetKptrRestrictAction, "SetKptrRestrict");
     am.QueueBuiltinAction(TestPerfEventSelinuxAction, "TestPerfEventSelinux");
     // QueueEventTrigger用于触发Action,这里 触发 early- init事件
+    // QueueEventTrigger()函数只把triggle加入到ActionManager的event_queue_中
     am.QueueEventTrigger("early-init");
 
     // Queue an action that waits for coldboot done so we know ueventd has set up all of /dev...
+    // 该函数在创建action的同时，把该事件触发添加到ActionManager的事件队列中，后续会遍历ActionManager的event_queue_找到的triggle对应的action的command会被依次执行，
     am.QueueBuiltinAction(wait_for_coldboot_done_action, "wait_for_coldboot_done");
     // ... so that we can start queuing up actions that require stuff from /dev.
     am.QueueBuiltinAction(MixHwrngIntoLinuxRngAction, "MixHwrngIntoLinuxRng");
@@ -856,6 +859,7 @@ int SecondStageMain(int argc, char** argv) {
         }
 
         if (!(prop_waiter_state.MightBeWaiting() || Service::is_exec_service_running())) {
+            // 核心函数 
             am.ExecuteOneCommand();
         }
         if (!IsShuttingDown()) {
