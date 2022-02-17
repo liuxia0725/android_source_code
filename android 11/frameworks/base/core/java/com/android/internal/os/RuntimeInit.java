@@ -48,8 +48,9 @@ import java.util.Objects;
 import java.util.logging.LogManager;
 
 /**
- * Main entry point for runtime initialization.  Not for
+ * Main entry point for runtime initialization. Not for
  * public consumption.
+ * 
  * @hide
  */
 public class RuntimeInit {
@@ -68,6 +69,7 @@ public class RuntimeInit {
     private static volatile ApplicationWtfHandler sDefaultApplicationWtfHandler;
 
     private static final native void nativeFinishInit();
+
     private static final native void nativeSetExitWithoutCleanup(boolean exitWithoutCleanup);
 
     private static int Clog_e(String tag, String msg, Throwable tr) {
@@ -100,7 +102,8 @@ public class RuntimeInit {
             mTriggered = true;
 
             // Don't re-enter if KillApplicationHandler has already run
-            if (mCrashing) return;
+            if (mCrashing)
+                return;
 
             // mApplicationObject is null for non-zygote java programs (e.g. "am")
             // There are also apps running with the system UID. We don't want the
@@ -114,7 +117,7 @@ public class RuntimeInit {
     }
 
     /**
-     * Handle application death from an uncaught exception.  The framework
+     * Handle application death from an uncaught exception. The framework
      * catches these for the main threads, so this should only matter for
      * threads created by applications. Before this method runs, the given
      * instance of {@link LoggingHandler} should already have logged details
@@ -131,8 +134,10 @@ public class RuntimeInit {
          * loggingHandler.uncaughtException} will be called first.
          *
          * @param loggingHandler the {@link LoggingHandler} expected to have run before
-         *     this instance's {@link #uncaughtException(Thread, Throwable) uncaughtException}
-         *     is being called.
+         *                       this instance's
+         *                       {@link #uncaughtException(Thread, Throwable)
+         *                       uncaughtException}
+         *                       is being called.
          */
         public KillApplicationHandler(LoggingHandler loggingHandler) {
             this.mLoggingHandler = Objects.requireNonNull(loggingHandler);
@@ -144,12 +149,15 @@ public class RuntimeInit {
                 ensureLogging(t, e);
 
                 // Don't re-enter -- avoid infinite loops if crash-reporting crashes.
-                if (mCrashing) return;
+                if (mCrashing)
+                    return;
                 mCrashing = true;
 
                 // Try to end profiling. If a profiler is running at this point, and we kill the
-                // process (below), the in-memory buffer will be lost. So try to stop, which will
-                // flush the buffer. (This makes method trace profiling useful to debug crashes.)
+                // process (below), the in-memory buffer will be lost. So try to stop, which
+                // will
+                // flush the buffer. (This makes method trace profiling useful to debug
+                // crashes.)
                 if (ActivityThread.currentActivityThread() != null) {
                     ActivityThread.currentActivityThread().stopProfiling();
                 }
@@ -164,7 +172,7 @@ public class RuntimeInit {
                     try {
                         Clog_e(TAG, "Error reporting crash", t2);
                     } catch (Throwable t3) {
-                        // Even Clog_e() fails!  Oh well.
+                        // Even Clog_e() fails! Oh well.
                     }
                 }
             } finally {
@@ -179,7 +187,7 @@ public class RuntimeInit {
          *
          * See b/73380984. This reinstates the pre-O behavior of
          *
-         *   {@code thread.getUncaughtExceptionHandler().uncaughtException(thread, e);}
+         * {@code thread.getUncaughtExceptionHandler().uncaughtException(thread, e);}
          *
          * logging the exception (in addition to killing the app). This behavior
          * was never documented / guaranteed but helps in diagnostics of apps
@@ -203,14 +211,17 @@ public class RuntimeInit {
     }
 
     /**
-     * Common initialization that (unlike {@link #commonInit()} should happen prior to
+     * Common initialization that (unlike {@link #commonInit()} should happen prior
+     * to
      * the Zygote fork.
      */
     public static void preForkInit() {
-        if (DEBUG) Slog.d(TAG, "Entered preForkInit.");
+        if (DEBUG)
+            Slog.d(TAG, "Entered preForkInit.");
         RuntimeHooks.setThreadPrioritySetter(new RuntimeThreadPrioritySetter());
         RuntimeInit.enableDdms();
-        // TODO(b/142019040#comment13): Decide whether to load the default instance eagerly, i.e.
+        // TODO(b/142019040#comment13): Decide whether to load the default instance
+        // eagerly, i.e.
         // MimeMap.setDefault(DefaultMimeMapFactory.create());
         /*
          * Replace libcore's minimal default mapping between MIME types and file
@@ -222,18 +233,19 @@ public class RuntimeInit {
     }
 
     private static class RuntimeThreadPrioritySetter implements ThreadPrioritySetter {
-        // Should remain consistent with kNiceValues[] in system/libartpalette/palette_android.cc
+        // Should remain consistent with kNiceValues[] in
+        // system/libartpalette/palette_android.cc
         private static final int[] NICE_VALUES = {
-            Process.THREAD_PRIORITY_LOWEST,  // 1 (MIN_PRIORITY)
-            Process.THREAD_PRIORITY_BACKGROUND + 6,
-            Process.THREAD_PRIORITY_BACKGROUND + 3,
-            Process.THREAD_PRIORITY_BACKGROUND,
-            Process.THREAD_PRIORITY_DEFAULT,  // 5 (NORM_PRIORITY)
-            Process.THREAD_PRIORITY_DEFAULT - 2,
-            Process.THREAD_PRIORITY_DEFAULT - 4,
-            Process.THREAD_PRIORITY_URGENT_DISPLAY + 3,
-            Process.THREAD_PRIORITY_URGENT_DISPLAY + 2,
-            Process.THREAD_PRIORITY_URGENT_DISPLAY  // 10 (MAX_PRIORITY)
+                Process.THREAD_PRIORITY_LOWEST, // 1 (MIN_PRIORITY)
+                Process.THREAD_PRIORITY_BACKGROUND + 6,
+                Process.THREAD_PRIORITY_BACKGROUND + 3,
+                Process.THREAD_PRIORITY_BACKGROUND,
+                Process.THREAD_PRIORITY_DEFAULT, // 5 (NORM_PRIORITY)
+                Process.THREAD_PRIORITY_DEFAULT - 2,
+                Process.THREAD_PRIORITY_DEFAULT - 4,
+                Process.THREAD_PRIORITY_URGENT_DISPLAY + 3,
+                Process.THREAD_PRIORITY_URGENT_DISPLAY + 2,
+                Process.THREAD_PRIORITY_URGENT_DISPLAY // 10 (MAX_PRIORITY)
         };
 
         @Override
@@ -252,7 +264,8 @@ public class RuntimeInit {
 
     @UnsupportedAppUsage
     protected static final void commonInit() {
-        if (DEBUG) Slog.d(TAG, "Entered RuntimeInit!");
+        if (DEBUG)
+            Slog.d(TAG, "Entered RuntimeInit!");
 
         /*
          * set handlers; these apply to all threads in the VM. Apps can replace
@@ -263,7 +276,8 @@ public class RuntimeInit {
         Thread.setDefaultUncaughtExceptionHandler(new KillApplicationHandler(loggingHandler));
 
         /*
-         * Install a time zone supplier that uses the Android persistent time zone system property.
+         * Install a time zone supplier that uses the Android persistent time zone
+         * system property.
          */
         RuntimeHooks.setTimeZoneIdSupplier(() -> SystemProperties.get("persist.sys.timezone"));
 
@@ -291,7 +305,7 @@ public class RuntimeInit {
         /*
          * If we're running in an emulator launched with "-trace", put the
          * VM into emulator trace profiling mode so that the user can hit
-         * F9/F10 at any time to capture traces.  This has performance
+         * F9/F10 at any time to capture traces. This has performance
          * consequences, so it's not something you want to do always.
          */
         String trace = SystemProperties.get("ro.kernel.android.tracing");
@@ -338,8 +352,8 @@ public class RuntimeInit {
      * Converts various failing exceptions into RuntimeExceptions, with
      * the assumption that they will then cause the VM instance to exit.
      *
-     * @param className Fully-qualified class name
-     * @param argv Argument vector for main()
+     * @param className   Fully-qualified class name
+     * @param argv        Argument vector for main()
      * @param classLoader the classLoader to load {@className} with
      */
     protected static Runnable findStaticMain(String className, String[] argv,
@@ -356,6 +370,7 @@ public class RuntimeInit {
 
         Method m;
         try {
+            // 通过反射调用的systemserver的main函数中
             m = cl.getMethod("main", new Class[] { String[].class });
         } catch (NoSuchMethodException ex) {
             throw new RuntimeException(
@@ -366,7 +381,7 @@ public class RuntimeInit {
         }
 
         int modifiers = m.getModifiers();
-        if (! (Modifier.isStatic(modifiers) && Modifier.isPublic(modifiers))) {
+        if (!(Modifier.isStatic(modifiers) && Modifier.isPublic(modifiers))) {
             throw new RuntimeException(
                     "Main method is not public and static on " + className);
         }
@@ -384,10 +399,12 @@ public class RuntimeInit {
     public static final void main(String[] argv) {
         preForkInit();
         if (argv.length == 2 && argv[1].equals("application")) {
-            if (DEBUG) Slog.d(TAG, "RuntimeInit: Starting application");
+            if (DEBUG)
+                Slog.d(TAG, "RuntimeInit: Starting application");
             redirectLogStreams();
         } else {
-            if (DEBUG) Slog.d(TAG, "RuntimeInit: Starting tool");
+            if (DEBUG)
+                Slog.d(TAG, "RuntimeInit: Starting tool");
         }
 
         commonInit();
@@ -398,14 +415,15 @@ public class RuntimeInit {
          */
         nativeFinishInit();
 
-        if (DEBUG) Slog.d(TAG, "Leaving RuntimeInit!");
+        if (DEBUG)
+            Slog.d(TAG, "Leaving RuntimeInit!");
     }
 
     protected static Runnable applicationInit(int targetSdkVersion, long[] disabledCompatChanges,
             String[] argv, ClassLoader classLoader) {
         // If the application calls System.exit(), terminate the process
-        // immediately without running any shutdown hooks.  It is not possible to
-        // shutdown an Android application gracefully.  Among other things, the
+        // immediately without running any shutdown hooks. It is not possible to
+        // shutdown an Android application gracefully. Among other things, the
         // Android runtime shutdown hooks close the Binder driver, which can cause
         // leftover running threads to crash before the process actually exits.
         nativeSetExitWithoutCleanup(true);
@@ -433,11 +451,11 @@ public class RuntimeInit {
     }
 
     /**
-     * Report a serious error in the current process.  May or may not cause
+     * Report a serious error in the current process. May or may not cause
      * the process to terminate (depends on system settings).
      *
      * @param tag to record with the error
-     * @param t exception describing the error site and conditions
+     * @param t   exception describing the error site and conditions
      */
     public static void wtf(String tag, Throwable t, boolean system) {
         try {
@@ -477,7 +495,8 @@ public class RuntimeInit {
     }
 
     /**
-     * Set the default {@link ApplicationWtfHandler}, in case the ActivityManager is not ready yet.
+     * Set the default {@link ApplicationWtfHandler}, in case the ActivityManager is
+     * not ready yet.
      */
     public static void setDefaultApplicationWtfHandler(final ApplicationWtfHandler handler) {
         sDefaultApplicationWtfHandler = handler;
@@ -488,10 +507,11 @@ public class RuntimeInit {
      */
     public interface ApplicationWtfHandler {
         /**
-         * @param app object of the crashing app, null for the system server
-         * @param tag reported by the caller
-         * @param system whether this wtf is coming from the system
-         * @param crashInfo describing the context of the error
+         * @param app                object of the crashing app, null for the system
+         *                           server
+         * @param tag                reported by the caller
+         * @param system             whether this wtf is coming from the system
+         * @param crashInfo          describing the context of the error
          * @param immediateCallerPid the caller Pid
          * @return true if the process should exit immediately (WTF is fatal)
          */
@@ -525,7 +545,7 @@ public class RuntimeInit {
      *
      * Current recognized args:
      * <ul>
-     *   <li> <code> [--] &lt;start class name&gt;  &lt;args&gt;
+     * <li><code> [--] &lt;start class name&gt; &lt;args&gt;
      * </ul>
      */
     static class Arguments {
@@ -537,6 +557,7 @@ public class RuntimeInit {
 
         /**
          * Constructs instance and parses args
+         * 
          * @param args runtime command-line args
          * @throws IllegalArgumentException
          */
@@ -572,7 +593,8 @@ public class RuntimeInit {
     }
 
     /**
-     * Helper class which holds a method and arguments and can call them. This is used as part of
+     * Helper class which holds a method and arguments and can call them. This is
+     * used as part of
      * a trampoline to get rid of the initial process setup stack frames.
      */
     static class MethodAndArgsCaller implements Runnable {

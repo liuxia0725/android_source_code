@@ -181,7 +181,7 @@ int main(int argc, char* const argv[])
       }
       ALOGV("app_process main with argv: %s", argv_String.string());
     }
-
+    // 使用AppRuntime类实例化了一个虚拟机runtime，而AppRuntime则继承AndroidRuntime;
     AppRuntime runtime(argv[0], computeArgBlockSize(argc, argv));
     // Process command line arguments
     // ignore argv[0]
@@ -261,6 +261,14 @@ int main(int argc, char* const argv[])
     String8 className;
 
     ++i;  // Skip unused "parent dir" argument.
+
+    // 2.解析传给app_main的参数，主要是zygote和start_system_server；
+    /*
+    app_process 里面定义了三种应用程序类型： 
+        1. Zygote: com.android.internal.os.ZygoteInit 
+        2. System Server, 不单独启动，而是由Zygote启动 
+        3. 其他指定类名的Java 程序
+    */
     while (i < argc) {
         const char* arg = argv[i++];
         if (strcmp(arg, "--zygote") == 0) {
@@ -307,7 +315,7 @@ int main(int argc, char* const argv[])
         maybeCreateDalvikCache();
 
         if (startSystemServer) {
-            args.add(String8("start-system-server"));
+            args.add(String8("start-system-server")); 
         }
 
         char prop[PROP_VALUE_MAX];
@@ -331,7 +339,7 @@ int main(int argc, char* const argv[])
     if (!niceName.isEmpty()) {
         runtime.setArgv0(niceName.string(), true /* setProcName */);
     }
-
+    // 启动虚拟机。启动的方法start是父类AndroidRuntime的方法。注意第一个传参的参数。
     if (zygote) {
         runtime.start("com.android.internal.os.ZygoteInit", args, zygote);
     } else if (className) {

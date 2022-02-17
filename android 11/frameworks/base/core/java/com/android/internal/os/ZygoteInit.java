@@ -77,7 +77,8 @@ import java.security.Security;
 /**
  * Startup class for the zygote process.
  *
- * Pre-initializes some classes, and then waits for commands on a UNIX domain socket. Based on these
+ * Pre-initializes some classes, and then waits for commands on a UNIX domain
+ * socket. Based on these
  * commands, forks off child processes that inherit the initial state of the VM.
  *
  * Please see {@link ZygoteArguments} for documentation on the client protocol.
@@ -86,11 +87,11 @@ import java.security.Security;
  */
 public class ZygoteInit {
 
-    // TODO (chriswailes): Change this so it is set with Zygote or ZygoteSecondary as appropriate
+    // TODO (chriswailes): Change this so it is set with Zygote or ZygoteSecondary
+    // as appropriate
     private static final String TAG = "Zygote";
 
-    private static final String PROPERTY_DISABLE_GRAPHICS_DRIVER_PRELOADING =
-            "ro.zygote.disable_gl_preload";
+    private static final String PROPERTY_DISABLE_GRAPHICS_DRIVER_PRELOADING = "ro.zygote.disable_gl_preload";
 
     private static final int LOG_BOOT_PROGRESS_PRELOAD_START = 3020;
     private static final int LOG_BOOT_PROGRESS_PRELOAD_END = 3030;
@@ -147,7 +148,8 @@ public class ZygoteInit {
         Trace.traceEnd(Trace.TRACE_TAG_DALVIK);
         preloadSharedLibraries();
         preloadTextResources();
-        // Ask the WebViewFactory to do any initialization that must run in the zygote process,
+        // Ask the WebViewFactory to do any initialization that must run in the zygote
+        // process,
         // for memory sharing purposes.
         WebViewFactory.prepareWebViewInZygote();
         endPreload();
@@ -192,10 +194,14 @@ public class ZygoteInit {
     native private static void nativePreloadAppProcessHALs();
 
     /**
-     * This call loads the graphics driver by making an OpenGL or Vulkan call.  If the driver is
-     * not currently in memory it will load and initialize it.  The OpenGL call itself is relatively
-     * cheap and pure.  This means that it is a low overhead on the initial call, and is safe and
-     * cheap to call later.  Calls after the initial invocation will effectively be no-ops for the
+     * This call loads the graphics driver by making an OpenGL or Vulkan call. If
+     * the driver is
+     * not currently in memory it will load and initialize it. The OpenGL call
+     * itself is relatively
+     * cheap and pure. This means that it is a low overhead on the initial call, and
+     * is safe and
+     * cheap to call later. Calls after the initial invocation will effectively be
+     * no-ops for the
      * system.
      */
     static native void nativePreloadGraphicsDriver();
@@ -212,17 +218,21 @@ public class ZygoteInit {
     }
 
     /**
-     * Register AndroidKeyStoreProvider and warm up the providers that are already registered.
+     * Register AndroidKeyStoreProvider and warm up the providers that are already
+     * registered.
      *
-     * By doing it here we avoid that each app does it when requesting a service from the provider
+     * By doing it here we avoid that each app does it when requesting a service
+     * from the provider
      * for the first time.
      */
     private static void warmUpJcaProviders() {
         long startTime = SystemClock.uptimeMillis();
         Trace.traceBegin(
                 Trace.TRACE_TAG_DALVIK, "Starting installation of AndroidKeyStoreProvider");
-        // AndroidKeyStoreProvider.install() manipulates the list of JCA providers to insert
-        // preferred providers. Note this is not done via security.properties as the JCA providers
+        // AndroidKeyStoreProvider.install() manipulates the list of JCA providers to
+        // insert
+        // preferred providers. Note this is not done via security.properties as the JCA
+        // providers
         // are not on the classpath in the case of, for example, raw dalvikvm runtimes.
         AndroidKeyStoreProvider.install();
         Log.i(TAG, "Installed AndroidKeyStoreProvider in "
@@ -241,9 +251,11 @@ public class ZygoteInit {
     }
 
     /**
-     * Performs Zygote process initialization. Loads and initializes commonly used classes.
+     * Performs Zygote process initialization. Loads and initializes commonly used
+     * classes.
      *
-     * Most classes only cause a few hundred bytes to be allocated, but a few will allocate a dozen
+     * Most classes only cause a few hundred bytes to be allocated, but a few will
+     * allocate a dozen
      * Kbytes (in one case, 500+K).
      */
     private static void preloadClasses() {
@@ -264,7 +276,8 @@ public class ZygoteInit {
         final int reuid = Os.getuid();
         final int regid = Os.getgid();
 
-        // We need to drop root perms only if we're already root. In the case of "wrapped"
+        // We need to drop root perms only if we're already root. In the case of
+        // "wrapped"
         // processes (see WrapperInit), this function is called from an unprivileged uid
         // and gid.
         boolean droppedPriviliges = false;
@@ -280,8 +293,7 @@ public class ZygoteInit {
         }
 
         try {
-            BufferedReader br =
-                    new BufferedReader(new InputStreamReader(is), Zygote.SOCKET_BUFFER_SIZE);
+            BufferedReader br = new BufferedReader(new InputStreamReader(is), Zygote.SOCKET_BUFFER_SIZE);
 
             int count = 0;
             String line;
@@ -325,14 +337,18 @@ public class ZygoteInit {
         } finally {
             IoUtils.closeQuietly(is);
 
-            // Fill in dex caches with classes, fields, and methods brought in by preloading.
+            // Fill in dex caches with classes, fields, and methods brought in by
+            // preloading.
             Trace.traceBegin(Trace.TRACE_TAG_DALVIK, "PreloadDexCaches");
             runtime.preloadDexCaches();
             Trace.traceEnd(Trace.TRACE_TAG_DALVIK);
 
-            // If we are profiling the boot image, reset the Jit counters after preloading the
-            // classes. We want to preload for performance, and we can use method counters to
-            // infer what clases are used after calling resetJitCounters, for profile purposes.
+            // If we are profiling the boot image, reset the Jit counters after preloading
+            // the
+            // classes. We want to preload for performance, and we can use method counters
+            // to
+            // infer what clases are used after calling resetJitCounters, for profile
+            // purposes.
             // Can't use device_config since we are the zygote.
             String prop = SystemProperties.get(
                     "persist.device_config.runtime_native_boot.profilebootclasspath", "");
@@ -359,7 +375,8 @@ public class ZygoteInit {
     }
 
     /**
-     * Load in things which are used by many apps but which cannot be put in the boot
+     * Load in things which are used by many apps but which cannot be put in the
+     * boot
      * classpath.
      */
     private static void cacheNonBootClasspathClassLoaders() {
@@ -367,33 +384,34 @@ public class ZygoteInit {
         // Old system applications still get them for backwards compatibility reasons,
         // so they are cached here in order to preserve performance characteristics.
         SharedLibraryInfo hidlBase = new SharedLibraryInfo(
-                "/system/framework/android.hidl.base-V1.0-java.jar", null /*packageName*/,
-                null /*codePaths*/, null /*name*/, 0 /*version*/, SharedLibraryInfo.TYPE_BUILTIN,
-                null /*declaringPackage*/, null /*dependentPackages*/, null /*dependencies*/);
+                "/system/framework/android.hidl.base-V1.0-java.jar", null /* packageName */,
+                null /* codePaths */, null /* name */, 0 /* version */, SharedLibraryInfo.TYPE_BUILTIN,
+                null /* declaringPackage */, null /* dependentPackages */, null /* dependencies */);
         SharedLibraryInfo hidlManager = new SharedLibraryInfo(
-                "/system/framework/android.hidl.manager-V1.0-java.jar", null /*packageName*/,
-                null /*codePaths*/, null /*name*/, 0 /*version*/, SharedLibraryInfo.TYPE_BUILTIN,
-                null /*declaringPackage*/, null /*dependentPackages*/, null /*dependencies*/);
+                "/system/framework/android.hidl.manager-V1.0-java.jar", null /* packageName */,
+                null /* codePaths */, null /* name */, 0 /* version */, SharedLibraryInfo.TYPE_BUILTIN,
+                null /* declaringPackage */, null /* dependentPackages */, null /* dependencies */);
         hidlManager.addDependency(hidlBase);
 
         SharedLibraryInfo androidTestBase = new SharedLibraryInfo(
-                "/system/framework/android.test.base.jar", null /*packageName*/,
-                null /*codePaths*/, null /*name*/, 0 /*version*/, SharedLibraryInfo.TYPE_BUILTIN,
-                null /*declaringPackage*/, null /*dependentPackages*/, null /*dependencies*/);
+                "/system/framework/android.test.base.jar", null /* packageName */,
+                null /* codePaths */, null /* name */, 0 /* version */, SharedLibraryInfo.TYPE_BUILTIN,
+                null /* declaringPackage */, null /* dependentPackages */, null /* dependencies */);
 
         ApplicationLoaders.getDefault().createAndCacheNonBootclasspathSystemClassLoaders(
-                new SharedLibraryInfo[]{
-                    // ordered dependencies first
-                    hidlBase,
-                    hidlManager,
-                    androidTestBase,
+                new SharedLibraryInfo[] {
+                        // ordered dependencies first
+                        hidlBase,
+                        hidlManager,
+                        androidTestBase,
                 });
     }
 
     /**
      * Load in commonly used resources, so they can be shared across processes.
      *
-     * These tend to be a few Kbytes, but are frequently in the 20-40K range, and occasionally even
+     * These tend to be a few Kbytes, but are frequently in the 20-40K range, and
+     * occasionally even
      * larger.
      */
     private static void preloadResources() {
@@ -457,7 +475,6 @@ public class ZygoteInit {
         return N;
     }
 
-
     private static int preloadDrawables(TypedArray ar) {
         int N = ar.length();
         for (int i = 0; i < N; i++) {
@@ -478,8 +495,10 @@ public class ZygoteInit {
     }
 
     /**
-     * Runs several special GCs to try to clean up a few generations of softly- and final-reachable
-     * objects, along with any other garbage. This is only useful just before a fork().
+     * Runs several special GCs to try to clean up a few generations of softly- and
+     * final-reachable
+     * objects, along with any other garbage. This is only useful just before a
+     * fork().
      */
     private static void gcAndFinalize() {
         ZygoteHooks.gcAndFinalize();
@@ -487,7 +506,7 @@ public class ZygoteInit {
 
     private static boolean shouldProfileSystemServer() {
         boolean defaultValue = SystemProperties.getBoolean("dalvik.vm.profilesystemserver",
-                /*default=*/ false);
+                /* default= */ false);
         // Can't use DeviceConfig since it's not initialized at this point.
         return SystemProperties.getBoolean(
                 "persist.device_config." + DeviceConfig.NAMESPACE_RUNTIME_NATIVE_BOOT
@@ -499,7 +518,8 @@ public class ZygoteInit {
      * Finish remaining work for the newly forked system server process.
      */
     private static Runnable handleSystemServerProcess(ZygoteArguments parsedArgs) {
-        // set umask to 0077 so new files and directories will default to owner-only permissions.
+        // set umask to 0077 so new files and directories will default to owner-only
+        // permissions.
         Os.umask(S_IRWXG | S_IRWXO);
 
         if (parsedArgs.mNiceName != null) {
@@ -509,7 +529,8 @@ public class ZygoteInit {
         final String systemServerClasspath = Os.getenv("SYSTEMSERVERCLASSPATH");
         if (systemServerClasspath != null) {
             performSystemServerDexOpt(systemServerClasspath);
-            // Capturing profiles is only supported for debug or eng builds since selinux normally
+            // Capturing profiles is only supported for debug or eng builds since selinux
+            // normally
             // prevents it.
             if (shouldProfileSystemServer() && (Build.IS_USERDEBUG || Build.IS_ENG)) {
                 try {
@@ -524,7 +545,8 @@ public class ZygoteInit {
         if (parsedArgs.mInvokeWith != null) {
             String[] args = parsedArgs.mRemainingArgs;
             // If we have a non-null system server class path, we'll have to duplicate the
-            // existing arguments and append the classpath to it. ART will handle the classpath
+            // existing arguments and append the classpath to it. ART will handle the
+            // classpath
             // correctly when we exec a new process.
             if (systemServerClasspath != null) {
                 String[] amendedArgs = new String[args.length + 2];
@@ -559,8 +581,10 @@ public class ZygoteInit {
     }
 
     /**
-     * Note that preparing the profiles for system server does not require special selinux
-     * permissions. From the installer perspective the system server is a regular package which can
+     * Note that preparing the profiles for system server does not require special
+     * selinux
+     * permissions. From the installer perspective the system server is a regular
+     * package which can
      * capture profile information.
      */
     private static void prepareSystemServerProfile(String systemServerClasspath)
@@ -581,7 +605,7 @@ public class ZygoteInit {
                 UserHandle.getAppId(Process.SYSTEM_UID),
                 systemServerProfileName,
                 codePaths[0],
-                /*dexMetadata*/ null);
+                /* dexMetadata */ null);
 
         File profileDir = Environment.getDataProfilesDePackageDirectory(
                 UserHandle.USER_SYSTEM, systemServerPackageName);
@@ -599,15 +623,19 @@ public class ZygoteInit {
 
     /**
      * Sets the implementation to be used for logging hidden API accesses
-     * @param logger the implementation of the VMRuntime.HiddenApiUsageLogger interface
+     * 
+     * @param logger the implementation of the VMRuntime.HiddenApiUsageLogger
+     *               interface
      */
     public static void setHiddenApiUsageLogger(VMRuntime.HiddenApiUsageLogger logger) {
         VMRuntime.getRuntime().setHiddenApiUsageLogger(logger);
     }
 
     /**
-     * Creates a PathClassLoader for the given class path that is associated with a shared
-     * namespace, i.e., this classloader can access platform-private native libraries. The
+     * Creates a PathClassLoader for the given class path that is associated with a
+     * shared
+     * namespace, i.e., this classloader can access platform-private native
+     * libraries. The
      * classloader will use java.library.path as the native library path.
      */
     static ClassLoader createPathClassLoader(String classPath, int targetSdkVersion) {
@@ -621,7 +649,8 @@ public class ZygoteInit {
     }
 
     /**
-     * Performs dex-opt on the elements of {@code classPath}, if needed. We choose the instruction
+     * Performs dex-opt on the elements of {@code classPath}, if needed. We choose
+     * the instruction
      * set of the current runtime.
      */
     private static void performSystemServerDexOpt(String classPath) {
@@ -632,13 +661,13 @@ public class ZygoteInit {
 
         String classPathForElement = "";
         for (String classPathElement : classPathElements) {
-            // We default to the verify filter because the compilation will happen on /data and
+            // We default to the verify filter because the compilation will happen on /data
+            // and
             // system server cannot load executable code outside /system.
             String systemServerFilter = SystemProperties.get(
                     "dalvik.vm.systemservercompilerfilter", "verify");
 
-            String classLoaderContext =
-                        getSystemServerClassLoaderContext(classPathForElement);
+            String classLoaderContext = getSystemServerClassLoaderContext(classPathForElement);
             int dexoptNeeded;
             try {
                 dexoptNeeded = DexFile.getDexOptNeeded(
@@ -664,12 +693,12 @@ public class ZygoteInit {
                 final String compilerFilter = systemServerFilter;
                 final String uuid = StorageManager.UUID_PRIVATE_INTERNAL;
                 final String seInfo = null;
-                final int targetSdkVersion = 0;  // SystemServer targets the system's SDK version
+                final int targetSdkVersion = 0; // SystemServer targets the system's SDK version
                 try {
                     installd.dexopt(classPathElement, Process.SYSTEM_UID, packageName,
                             instructionSet, dexoptNeeded, outputPath, dexFlags, compilerFilter,
                             uuid, classLoaderContext, seInfo, false /* downgrade */,
-                            targetSdkVersion, /*profileName*/ null, /*dexMetadataPath*/ null,
+                            targetSdkVersion, /* profileName */ null, /* dexMetadataPath */ null,
                             "server-dexopt");
                 } catch (RemoteException | ServiceSpecificException e) {
                     // Ignore (but log), we need this on the classpath for fallback mode.
@@ -684,10 +713,13 @@ public class ZygoteInit {
     }
 
     /**
-     * Encodes the system server class loader context in a format that is accepted by dexopt. This
-     * assumes the system server is always loaded with a {@link dalvik.system.PathClassLoader}.
+     * Encodes the system server class loader context in a format that is accepted
+     * by dexopt. This
+     * assumes the system server is always loaded with a
+     * {@link dalvik.system.PathClassLoader}.
      *
-     * Note that ideally we would use the {@code DexoptUtils} to compute this. However we have no
+     * Note that ideally we would use the {@code DexoptUtils} to compute this.
+     * However we have no
      * dependency here on the server so we hard code the logic again.
      */
     private static String getSystemServerClassLoaderContext(String classPath) {
@@ -698,8 +730,9 @@ public class ZygoteInit {
      * Encodes the class path in a format accepted by dexopt.
      *
      * @param classPath  The old class path (may be empty).
-     * @param newElement  The new class path elements
-     * @return The class path encoding resulted from appending {@code newElement} to {@code
+     * @param newElement The new class path elements
+     * @return The class path encoding resulted from appending {@code newElement} to
+     *         {@code
      * classPath}.
      */
     private static String encodeSystemServerClassPath(String classPath, String newElement) {
@@ -711,8 +744,9 @@ public class ZygoteInit {
     /**
      * Prepare the arguments and forks for the system server process.
      *
-     * @return A {@code Runnable} that provides an entrypoint into system_server code in the child
-     * process; {@code null} in the parent.
+     * @return A {@code Runnable} that provides an entrypoint into system_server
+     *         code in the child
+     *         process; {@code null} in the parent.
      */
     private static Runnable forkSystemServer(String abiList, String socketName,
             ZygoteServer zygoteServer) {
@@ -729,9 +763,11 @@ public class ZygoteInit {
                 OsConstants.CAP_SYS_TIME,
                 OsConstants.CAP_SYS_TTY_CONFIG,
                 OsConstants.CAP_WAKE_ALARM,
-                OsConstants.CAP_BLOCK_SUSPEND
-        );
-        /* Containers run without some capabilities, so drop any caps that are not available. */
+                OsConstants.CAP_BLOCK_SUSPEND);
+        /*
+         * Containers run without some capabilities, so drop any caps that are not
+         * available.
+         */
         StructCapUserHeader header = new StructCapUserHeader(
                 OsConstants._LINUX_CAPABILITY_VERSION_3, 0);
         StructCapUserData[] data;
@@ -764,13 +800,19 @@ public class ZygoteInit {
             Zygote.applyInvokeWithSystemProperty(parsedArgs);
 
             if (Zygote.nativeSupportsTaggedPointers()) {
-                /* Enable pointer tagging in the system server. Hardware support for this is present
-                 * in all ARMv8 CPUs. */
+                /*
+                 * Enable pointer tagging in the system server. Hardware support for this is
+                 * present
+                 * in all ARMv8 CPUs.
+                 */
                 parsedArgs.mRuntimeFlags |= Zygote.MEMORY_TAG_LEVEL_TBI;
             }
 
-            /* Enable gwp-asan on the system server with a small probability. This is the same
-             * policy as applied to native processes and system apps. */
+            /*
+             * Enable gwp-asan on the system server with a small probability. This is the
+             * same
+             * policy as applied to native processes and system apps.
+             */
             parsedArgs.mRuntimeFlags |= Zygote.GWP_ASAN_LEVEL_LOTTERY;
 
             if (shouldProfileSystemServer()) {
@@ -778,6 +820,7 @@ public class ZygoteInit {
             }
 
             /* Request to fork the system server process */
+            /* 创建 system server 进程 */
             pid = Zygote.forkSystemServer(
                     parsedArgs.mUid, parsedArgs.mGid,
                     parsedArgs.mGids,
@@ -817,16 +860,23 @@ public class ZygoteInit {
     }
 
     /**
-     * This is the entry point for a Zygote process.  It creates the Zygote server, loads resources,
-     * and handles other tasks related to preparing the process for forking into applications.
+     * This is the entry point for a Zygote process. It creates the Zygote server,
+     * loads resources,
+     * and handles other tasks related to preparing the process for forking into
+     * applications.
      *
-     * This process is started with a nice value of -20 (highest priority).  All paths that flow
-     * into new processes are required to either set the priority to the default value or terminate
-     * before executing any non-system code.  The native side of this occurs in SpecializeCommon,
-     * while the Java Language priority is changed in ZygoteInit.handleSystemServerProcess,
+     * This process is started with a nice value of -20 (highest priority). All
+     * paths that flow
+     * into new processes are required to either set the priority to the default
+     * value or terminate
+     * before executing any non-system code. The native side of this occurs in
+     * SpecializeCommon,
+     * while the Java Language priority is changed in
+     * ZygoteInit.handleSystemServerProcess,
      * ZygoteConnection.handleChildProc, and Zygote.usapMain.
      *
-     * @param argv  Command line arguments used to specify the Zygote's configuration.
+     * @param argv Command line arguments used to specify the Zygote's
+     *             configuration.
      */
     @UnsupportedAppUsage
     public static void main(String argv[]) {
@@ -916,10 +966,17 @@ public class ZygoteInit {
 
             zygoteServer = new ZygoteServer(isPrimaryZygote);
 
+            // 虚拟机已经运行起来，接下来要做的事就是启动system_server，然后做好自己的本分，等待孵化app的指令
+            /*
+             * 1.解析参数；
+             * 2.fork system_server;
+             * 3.调用runSelectLoop方法，等待进程孵化请求；
+             */
             if (startSystemServer) {
                 Runnable r = forkSystemServer(abiList, zygoteSocketName, zygoteServer);
 
-                // {@code r == null} in the parent (zygote) process, and {@code r != null} in the
+                // {@code r == null} in the parent (zygote) process, and {@code r != null} in
+                // the
                 // child (system_server) process.
                 if (r != null) {
                     r.run();
@@ -941,7 +998,8 @@ public class ZygoteInit {
             }
         }
 
-        // We're in the child process and have exited the select loop. Proceed to execute the
+        // We're in the child process and have exited the select loop. Proceed to
+        // execute the
         // command.
         if (caller != null) {
             caller.run();
@@ -951,7 +1009,8 @@ public class ZygoteInit {
     /**
      * Return {@code true} if this device configuration has another zygote.
      *
-     * We determine this by comparing the device ABI list with this zygotes list. If this zygote
+     * We determine this by comparing the device ABI list with this zygotes list. If
+     * this zygote
      * supports all ABIs this device supports, there won't be another zygote.
      */
     private static boolean hasSecondZygote(String abiList) {
@@ -960,7 +1019,8 @@ public class ZygoteInit {
 
     private static void waitForSecondaryZygote(String socketName) {
         String otherZygoteName = Zygote.PRIMARY_SOCKET_NAME.equals(socketName)
-                ? Zygote.SECONDARY_SOCKET_NAME : Zygote.PRIMARY_SOCKET_NAME;
+                ? Zygote.SECONDARY_SOCKET_NAME
+                : Zygote.PRIMARY_SOCKET_NAME;
         ZygoteProcess.waitForConnectionToZygote(otherZygoteName);
     }
 
@@ -975,18 +1035,22 @@ public class ZygoteInit {
     }
 
     /**
-     * The main function called when started through the zygote process. This could be unified with
-     * main(), if the native code in nativeFinishInit() were rationalized with Zygote startup.<p>
+     * The main function called when started through the zygote process. This could
+     * be unified with
+     * main(), if the native code in nativeFinishInit() were rationalized with
+     * Zygote startup.
+     * <p>
      *
      * Current recognized args:
      * <ul>
-     * <li> <code> [--] &lt;start class name&gt;  &lt;args&gt;
+     * <li><code> [--] &lt;start class name&gt; &lt;args&gt;
      * </ul>
      *
-     * @param targetSdkVersion target SDK version
-     * @param disabledCompatChanges set of disabled compat changes for the process (all others
+     * @param targetSdkVersion      target SDK version
+     * @param disabledCompatChanges set of disabled compat changes for the process
+     *                              (all others
      *                              are enabled)
-     * @param argv             arg strings
+     * @param argv                  arg strings
      */
     public static final Runnable zygoteInit(int targetSdkVersion, long[] disabledCompatChanges,
             String[] argv, ClassLoader classLoader) {
@@ -1004,8 +1068,10 @@ public class ZygoteInit {
     }
 
     /**
-     * The main function called when starting a child zygote process. This is used as an alternative
-     * to zygoteInit(), which skips calling into initialization routines that start the Binder
+     * The main function called when starting a child zygote process. This is used
+     * as an alternative
+     * to zygoteInit(), which skips calling into initialization routines that start
+     * the Binder
      * threadpool.
      */
     static final Runnable childZygoteInit(

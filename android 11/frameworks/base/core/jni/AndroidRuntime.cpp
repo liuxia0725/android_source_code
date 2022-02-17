@@ -1092,6 +1092,8 @@ int AndroidRuntime::startVm(JavaVM** pJavaVM, JNIEnv** pEnv, bool zygote, bool p
      * If this call succeeds, the VM is ready, and we can start issuing
      * JNI calls.
      */
+
+    // startVM的前半部分是在处理虚拟机的启动参数，处理完配置参数后，会调用libart.so提供的一个接口：JNI_CreateJavaVM函数
     if (JNI_CreateJavaVM(pJavaVM, pEnv, &initArgs) < 0) {
         ALOGE("JNI_CreateJavaVM failed\n");
         return -1;
@@ -1133,6 +1135,13 @@ jstring AndroidRuntime::NewStringLatin1(JNIEnv* env, const char* bytes) {
  * Passes the main function two arguments, the class name and the specified
  * options string.
  */
+
+/*
+    1.加载libart.so，否则不能启动虚拟机；
+    2.启动虚拟机；
+    3.加载注册JNI方法；
+    4.根据传递给start方法的第一个参数，去寻找ZygoteInit类，找到类之后，找到该类的main方法，然后调用，在这之后就进入了Java的世界。
+*/
 void AndroidRuntime::start(const char* className, const Vector<String8>& options, bool zygote)
 {
     ALOGD(">>>>>> START %s uid %d <<<<<<\n",
@@ -1188,8 +1197,9 @@ void AndroidRuntime::start(const char* className, const Vector<String8>& options
 
     /* start the virtual machine */
     JniInvocation jni_invocation;
-    jni_invocation.Init(NULL);
+    jni_invocation.Init(NULL);  // 加载libart.so
     JNIEnv* env;
+    // 启动虚拟机
     if (startVm(&mJavaVM, &env, zygote, primary_zygote) != 0) {
         return;
     }
@@ -1230,6 +1240,8 @@ void AndroidRuntime::start(const char* className, const Vector<String8>& options
      * Start VM.  This thread becomes the main thread of the VM, and will
      * not return until the VM exits.
      */
+
+    // start方法的第一个参数为"com.android.internal.os.ZygoteInit"，然后通过FindClass方法找到ZygoteInit类，然后再调用相应的main方法进入到Java世界。
     char* slashClassName = toSlashClassName(className != NULL ? className : "");
     jclass startClass = env->FindClass(slashClassName);
     if (startClass == NULL) {
