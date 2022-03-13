@@ -119,21 +119,23 @@ int main(int argc, char** argv) {
     }
 
     const char* driver = argc == 2 ? argv[1] : "/dev/binder";
-
+    // binder driver init
     sp<ProcessState> ps = ProcessState::initWithDriver(driver);
     ps->setThreadPoolMaxThreadCount(0);
     ps->setCallRestriction(ProcessState::CallRestriction::FATAL_IF_NOT_ONEWAY);
-
+    // 创建一个servicemanager对象
     sp<ServiceManager> manager = new ServiceManager(std::make_unique<Access>());
+    // 将其加入到自己的service中
     if (!manager->addService("manager", manager, false /*allowIsolated*/, IServiceManager::DUMP_FLAG_PRIORITY_DEFAULT).isOk()) {
         LOG(ERROR) << "Could not self register servicemanager";
     }
 
     IPCThreadState::self()->setTheContextObject(manager);
+    // 将自己注册为Binder进程间通信机制的上下文管理者
     ps->becomeContextManager(nullptr, nullptr);
 
     sp<Looper> looper = Looper::prepare(false /*allowNonCallbacks*/);
-
+    //循环等待和处理Client进程的通信
     BinderCallback::setupTo(looper);
     ClientCallbackCallback::setupTo(looper, manager);
 

@@ -972,6 +972,7 @@ status_t IPCThreadState::talkWithDriver(bool doReceive)
     bwr.write_consumed = 0;
     bwr.read_consumed = 0;
     status_t err;
+    // 陷入循环 调用ioctl不停的读写
     do {
         IF_LOG_COMMANDS() {
             alog << "About to read/write, write size = " << mOut.dataSize() << endl;

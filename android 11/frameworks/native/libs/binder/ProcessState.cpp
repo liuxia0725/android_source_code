@@ -97,7 +97,7 @@ sp<ProcessState> ProcessState::initWithDriver(const char* driver)
         ALOGE("Binder driver %s is unavailable. Using /dev/binder instead.", driver);
         driver = "/dev/binder";
     }
-
+    // 在构造函数中进行open的调用
     gProcess = new ProcessState(driver);
     return gProcess;
 }
@@ -141,7 +141,8 @@ bool ProcessState::becomeContextManager(context_check_func checkFunc, void* user
     flat_binder_object obj {
         .flags = FLAT_BINDER_FLAG_TXN_SECURITY_CTX,
     };
-
+    // 设置为管理上下文 
+    // 等同于以前版本的binder_become_context_manager
     int result = ioctl(mDriverFD, BINDER_SET_CONTEXT_MGR_EXT, &obj);
 
     // fallback to original method
@@ -348,9 +349,11 @@ String8 ProcessState::getDriverName() {
 
 static int open_driver(const char *driver)
 {
+    // 打开的binder设备文件
     int fd = open(driver, O_RDWR | O_CLOEXEC);
     if (fd >= 0) {
         int vers = 0;
+        // 获取binder版本信息
         status_t result = ioctl(fd, BINDER_VERSION, &vers);
         if (result == -1) {
             ALOGE("Binder ioctl to obtain version failed: %s", strerror(errno));
@@ -363,6 +366,7 @@ static int open_driver(const char *driver)
             close(fd);
             fd = -1;
         }
+        // 设置最大线程数为15
         size_t maxThreads = DEFAULT_MAX_BINDER_THREADS;
         result = ioctl(fd, BINDER_SET_MAX_THREADS, &maxThreads);
         if (result == -1) {
@@ -397,6 +401,7 @@ ProcessState::ProcessState(const char *driver)
 
     if (mDriverFD >= 0) {
         // mmap the binder, providing a chunk of virtual address space to receive transactions.
+        // 当binder驱动成功打开后 申请内存空间，地址和kernel映射到同一个物理页，通过系统调用，对应到binder_mmap函数
         mVMStart = mmap(nullptr, BINDER_VM_SIZE, PROT_READ, MAP_PRIVATE | MAP_NORESERVE, mDriverFD, 0);
         if (mVMStart == MAP_FAILED) {
             // *sigh*

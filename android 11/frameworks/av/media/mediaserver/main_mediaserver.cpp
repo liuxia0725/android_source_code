@@ -36,15 +36,18 @@ int main(int argc __unused, char **argv __unused)
 {
     signal(SIGPIPE, SIG_IGN);
 
-    sp<ProcessState> proc(ProcessState::self());
-    sp<IServiceManager> sm(defaultServiceManager());
+    sp<ProcessState> proc(ProcessState::self());    // 获取processstate实例对象
+    sp<IServiceManager> sm(defaultServiceManager());// 获取BpServiceManager对象 即Servicemanager的代理对象
     ALOGI("ServiceManager: %p", sm.get());
     AIcu_initializeIcuOrDie();
+    //  注册多媒体服务: 函数内部 将“media.player”服务通过servicemanager注册到底层
     MediaPlayerService::instantiate();
     ResourceManagerService::instantiate();
     registerExtensions();
     ::android::hardware::configureRpcThreadpool(16, false);
+    // 启动Binder线程池
     ProcessState::self()->startThreadPool();
+    // 当前线程加入到线程池
     IPCThreadState::self()->joinThreadPool();
     ::android::hardware::joinRpcThreadpool();
 }
